@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/employee" name="EmployeeDataAPI" xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="GET" uri-template="/fetch_data">
+        <inSequence>
+            <property expression="$url:empid" name="empid" scope="default" type="STRING"/>
+            <!-- Configure the MySQL datasource -->
+            <dblookup>
+                <connection>
+                    <pool>
+                        <driver>com.mysql.jdbc.Driver</driver>
+                        <url>jdbc:mysql://localhost:3306/afirstwso2</url>
+                        <user>root</user>
+                        <password>root</password>
+                    </pool>
+                </connection>
+                <statement>
+                    <sql><![CDATA[SELECT name, age, salary, birthdate, empid, createddate FROM employe_tbl WHERE empid = ?]]></sql>
+                    <parameter expression="get-property('empid')" type="VARCHAR"/>
+                    <result column="empid" name="empid"/>
+                    <result column="birthdate" name="birthdate"/>
+                    <result column="createddate" name="createddate"/>
+                    <result column="name" name="name"/>
+                    <result column="salary" name="salary"/>
+                    <result column="age" name="age"/>
+                </statement>
+            </dblookup>
+            <!-- Data transformation mediation -->
+            <payloadFactory media-type="json">
+                <format>
+                    {
+                        "name": "$1",
+                        "age": $2,
+                        "salary": $3,
+                        "birthdate": "$4",
+                        "empid": "$5",
+                        "createddate": "$6"
+                    }
+                </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('name')"/>
+                    <arg evaluator="xml" expression="get-property('age')"/>
+                    <arg evaluator="xml" expression="get-property('salary')"/>
+                    <arg evaluator="xml" expression="get-property('birthdate')"/>
+                    <arg evaluator="xml" expression="get-property('empid')"/>
+                    <arg evaluator="xml" expression="get-property('createddate')"/>
+                </args>
+            </payloadFactory>
+            <!-- Log after fetching data -->
+            <log level="custom">
+                <property name="message" value="Employee data fetched successfully"/>
+                <property expression="get-property('empid')" name="empid"/>
+            </log>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+</api>
